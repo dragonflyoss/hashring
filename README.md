@@ -1,13 +1,11 @@
 # Dragonfly Hashring
 
 [![GitHub release](https://img.shields.io/github/release/dragonflyoss/hashring.svg)](https://github.com/dragonflyoss/hashring/releases)
-[![Crates.io](https://img.shields.io/crates/v/dragonfly-hashring.svg)](https://crates.io/crates/dragonfly-hashring)
-[![Go Reference](https://pkg.go.dev/badge/d7y.io/hashring.svg)](https://pkg.go.dev/d7y.io/hashring)
 [![LICENSE](https://img.shields.io/github/license/dragonflyoss/dragonfly.svg?style=flat-square)](https://github.com/dragonflyoss/dragonfly/blob/main/LICENSE)
 
 Consistent hash ring with virtual nodes shared by the Dragonfly scheduler, the Dragonfly client and the
-Dragonfly SDKs. The Go module and the Rust crate place keys bit-for-bit identically, so every component
-selects the same seed peer or scheduler for the same task.
+Dragonfly SDKs. Positions are SipHash-2-4 values with a zero key, so the Go module and the Rust crate place
+keys bit-for-bit identically and every component selects the same seed peer or scheduler for the same task.
 
 ## Packages
 
