@@ -304,7 +304,7 @@ fn hashring_matches_go() {
     ];
 
     for (vnodes_per_node, nodes, key, replicas, expected) in test_cases {
-        let mut ring = VNodeHashRing::new(vnodes_per_node);
+        let mut ring = VNodeHashRing::with_vnodes_per_node(vnodes_per_node);
         for name in nodes {
             ring.add(name.to_string());
         }

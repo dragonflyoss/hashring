@@ -434,7 +434,7 @@ func TestHashring(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ring := New(tc.vnodesPerNode)
+			ring := New(WithVNodesPerNode(tc.vnodesPerNode))
 			for _, name := range tc.nodes {
 				ring.Add(name)
 			}

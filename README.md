@@ -23,7 +23,7 @@ Go:
 ```go
 import "d7y.io/hashring"
 
-ring := hashring.New(hashring.DefaultVNodesPerNode)
+ring := hashring.New()
 ring.Add("default-seed-client-0")
 ring.Add("default-seed-client-1")
 
@@ -34,14 +34,17 @@ name := vnode.Name()
 Rust:
 
 ```rust
-use dragonfly_hashring::{VNodeHashRing, DEFAULT_VNODES_PER_NODE};
+use dragonfly_hashring::VNodeHashRing;
 
-let mut ring = VNodeHashRing::new(DEFAULT_VNODES_PER_NODE);
+let mut ring = VNodeHashRing::new();
 ring.add("default-seed-client-0".to_string());
 ring.add("default-seed-client-1".to_string());
 
 let name = ring.get(&task_id).unwrap().name();
 ```
+
+Both constructors use `DefaultVNodesPerNode` virtual nodes per node, pass `hashring.WithVNodesPerNode(n)` or call
+`VNodeHashRing::with_vnodes_per_node(n)` to override it.
 
 ## Documentation
 

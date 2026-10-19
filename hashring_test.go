@@ -70,6 +70,14 @@ func TestVNodeHashRing_Add(t *testing.T) {
 			},
 		},
 		{
+			name:  "default vnodes per node",
+			nodes: []string{"default-seed-client-1"},
+			expect: func(t *testing.T, ring *VNodeHashRing) {
+				assert := assert.New(t)
+				assert.Equal(DefaultVNodesPerNode, ring.Len())
+			},
+		},
+		{
 			name:          "add one node",
 			vnodesPerNode: 2,
 			nodes:         []string{"default-seed-client-1"},
@@ -93,7 +101,12 @@ func TestVNodeHashRing_Add(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ring := New(tc.vnodesPerNode)
+			var options []Option
+			if tc.vnodesPerNode != 0 {
+				options = append(options, WithVNodesPerNode(tc.vnodesPerNode))
+			}
+
+			ring := New(options...)
 			for _, name := range tc.nodes {
 				ring.Add(name)
 			}
@@ -144,7 +157,7 @@ func TestVNodeHashRing_Get(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ring := New(2)
+			ring := New(WithVNodesPerNode(2))
 			for _, name := range tc.nodes {
 				ring.Add(name)
 			}
@@ -192,7 +205,7 @@ func TestVNodeHashRing_GetWithReplicas(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ring := New(2)
+			ring := New(WithVNodesPerNode(2))
 			for _, name := range tc.nodes {
 				ring.Add(name)
 			}
@@ -222,12 +235,12 @@ func TestVNodeHashRing_AddOrder(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			ringA := New(DefaultVNodesPerNode)
+			ringA := New()
 			for _, name := range mockNodes {
 				ringA.Add(name)
 			}
 
-			ringB := New(DefaultVNodesPerNode)
+			ringB := New()
 			for _, name := range slices.Backward(mockNodes) {
 				ringB.Add(name)
 			}

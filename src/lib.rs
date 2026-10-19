@@ -91,10 +91,23 @@ pub struct VNodeHashRing {
     nodes: Vec<Node>,
 }
 
+/// Implements the Default trait with [DEFAULT_VNODES_PER_NODE] virtual nodes per node.
+impl Default for VNodeHashRing {
+    /// Creates a new hash ring with the default virtual nodes per node.
+    fn default() -> Self {
+        Self::with_vnodes_per_node(DEFAULT_VNODES_PER_NODE)
+    }
+}
+
 /// Implements the consistent hash ring.
 impl VNodeHashRing {
+    /// Creates a new hash ring with [DEFAULT_VNODES_PER_NODE] virtual nodes per node.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Creates a new hash ring with `vnodes_per_node` virtual nodes per node.
-    pub fn new(vnodes_per_node: usize) -> Self {
+    pub fn with_vnodes_per_node(vnodes_per_node: usize) -> Self {
         VNodeHashRing {
             vnodes_per_node,
             nodes: Vec::new(),
@@ -197,7 +210,7 @@ mod tests {
         ];
 
         for (vnodes_per_node, nodes, expected) in test_cases {
-            let mut ring = VNodeHashRing::new(vnodes_per_node);
+            let mut ring = VNodeHashRing::with_vnodes_per_node(vnodes_per_node);
             for name in nodes {
                 ring.add(name.to_string());
             }
@@ -209,15 +222,23 @@ mod tests {
     }
 
     #[test]
+    fn new_uses_default_vnodes_per_node() {
+        let mut ring = VNodeHashRing::new();
+        ring.add("default-seed-client-1".to_string());
+        assert_eq!(ring.len(), DEFAULT_VNODES_PER_NODE);
+        assert_eq!(ring.len(), VNodeHashRing::default().vnodes_per_node);
+    }
+
+    #[test]
     fn get_returns_none_for_empty_ring() {
-        let ring = VNodeHashRing::new(2);
+        let ring = VNodeHashRing::with_vnodes_per_node(2);
         assert!(ring.get("task").is_none());
         assert!(ring.get_with_replicas("task", 2).is_none());
     }
 
     #[test]
     fn get_maps_every_key_to_the_single_node() {
-        let mut ring = VNodeHashRing::new(2);
+        let mut ring = VNodeHashRing::with_vnodes_per_node(2);
         ring.add("default-seed-client-1".to_string());
 
         for key in ["", "task-a", "task-b"] {
@@ -227,7 +248,7 @@ mod tests {
 
     #[test]
     fn get_with_replicas_clamps_to_the_ring() {
-        let mut ring = VNodeHashRing::new(2);
+        let mut ring = VNodeHashRing::with_vnodes_per_node(2);
         ring.add("default-seed-client-1".to_string());
         ring.add("default-seed-client-2".to_string());
 
@@ -242,7 +263,7 @@ mod tests {
 
     #[test]
     fn add_order_does_not_affect_get() {
-        let mut ring_a = VNodeHashRing::new(DEFAULT_VNODES_PER_NODE);
+        let mut ring_a = VNodeHashRing::new();
         for name in [
             "default-seed-client-1",
             "default-seed-client-2",
@@ -251,7 +272,7 @@ mod tests {
             ring_a.add(name.to_string());
         }
 
-        let mut ring_b = VNodeHashRing::new(DEFAULT_VNODES_PER_NODE);
+        let mut ring_b = VNodeHashRing::new();
         for name in [
             "default-seed-client-3",
             "default-seed-client-1",

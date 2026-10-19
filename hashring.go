@@ -88,9 +88,24 @@ type VNodeHashRing struct {
 	nodes []node
 }
 
-// New returns a new hash ring with vnodesPerNode virtual nodes per node.
-func New(vnodesPerNode int) *VNodeHashRing {
-	return &VNodeHashRing{vnodesPerNode: vnodesPerNode}
+// Option is a functional option for configuring the hash ring.
+type Option func(r *VNodeHashRing)
+
+// WithVNodesPerNode set the number of virtual nodes of each node on the ring.
+func WithVNodesPerNode(vnodesPerNode int) Option {
+	return func(r *VNodeHashRing) {
+		r.vnodesPerNode = vnodesPerNode
+	}
+}
+
+// New returns a new hash ring with DefaultVNodesPerNode virtual nodes per node.
+func New(options ...Option) *VNodeHashRing {
+	r := &VNodeHashRing{vnodesPerNode: DefaultVNodesPerNode}
+	for _, opt := range options {
+		opt(r)
+	}
+
+	return r
 }
 
 // Add adds vnodesPerNode virtual nodes of the named node to the ring.
