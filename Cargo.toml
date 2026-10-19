@@ -1,0 +1,15 @@
+[package]
+name = "dragonfly-hashring"
+description = "Consistent hash ring shared by the Dragonfly scheduler, client and SDKs"
+version = "0.1.0"
+authors = ["The Dragonfly Developers"]
+edition = "2021"
+readme = "README.md"
+homepage = "https://d7y.io/"
+repository = "https://github.com/dragonflyoss/hashring.git"
+license = "Apache-2.0"
+keywords = ["consistent-hashing", "hashring", "dragonfly", "p2p"]
+exclude = ["/.github", "/*.go", "/go.mod", "/go.sum", "/Makefile", "/.golangci.yml", "/.markdownlint.yml"]
+
+[dependencies]
+siphasher = "1.0"
