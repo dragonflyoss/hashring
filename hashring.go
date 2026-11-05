@@ -33,6 +33,10 @@ import (
 // the ring, shared by the seed peer selectors of dragonfly and dragonfly-sdk.
 const DefaultVNodesPerNode = 512
 
+// hashBufferSize is the size of the stack buffer of the hash input, which fits
+// the task ids and the node names without a heap allocation.
+const hashBufferSize = 128
+
 // VNode is a virtual node on the consistent hash ring. Each physical node is
 // represented by multiple virtual nodes to better balance key distribution.
 type VNode struct {
@@ -61,8 +65,8 @@ func (v VNode) String() string {
 // Changing it moves every key to another node, so it is a wire compatibility
 // contract shared with the dragonfly-hashring crate.
 func (v VNode) hash() uint64 {
-	buf := make([]byte, 0, 8+len(v.name)+1)
-	buf = binary.LittleEndian.AppendUint64(buf, uint64(v.id))
+	var arr [hashBufferSize]byte
+	buf := binary.LittleEndian.AppendUint64(arr[:0], uint64(v.id))
 	buf = append(buf, v.name...)
 	buf = append(buf, 0xff)
 	return siphash.Hash(0, 0, buf)
@@ -108,14 +112,30 @@ func New(options ...Option) *VNodeHashRing {
 	return r
 }
 
-// Add adds vnodesPerNode virtual nodes of the named node to the ring.
+// Add adds vnodesPerNode virtual nodes of the named node to the ring. The new
+// virtual nodes are sorted and merged into the ring from the back, which costs
+// linear time in the ring size instead of sorting the whole ring, and keeps
+// the existing virtual nodes before the new ones with the same key.
 func (r *VNodeHashRing) Add(name string) {
+	added := make([]node, 0, r.vnodesPerNode)
 	for id := range r.vnodesPerNode {
 		vnode := VNode{id: id, name: name}
-		r.nodes = append(r.nodes, node{key: vnode.hash(), vnode: vnode})
+		added = append(added, node{key: vnode.hash(), vnode: vnode})
 	}
 
-	slices.SortFunc(r.nodes, func(a, b node) int { return cmp.Compare(a.key, b.key) })
+	slices.SortFunc(added, func(a, b node) int { return cmp.Compare(a.key, b.key) })
+
+	i, j := len(r.nodes)-1, len(added)-1
+	r.nodes = slices.Grow(r.nodes, len(added))[:len(r.nodes)+len(added)]
+	for k := len(r.nodes) - 1; j >= 0; k-- {
+		if i >= 0 && r.nodes[i].key > added[j].key {
+			r.nodes[k] = r.nodes[i]
+			i--
+		} else {
+			r.nodes[k] = added[j]
+			j--
+		}
+	}
 }
 
 // Get returns the virtual node responsible for the key, and false when the
@@ -171,8 +191,8 @@ func (r *VNodeHashRing) search(key uint64) int {
 // hashKey returns the position of the key on the ring, hashed with the Rust
 // std Hash encoding of a string.
 func hashKey(key string) uint64 {
-	buf := make([]byte, 0, len(key)+1)
-	buf = append(buf, key...)
+	var arr [hashBufferSize]byte
+	buf := append(arr[:0], key...)
 	buf = append(buf, 0xff)
 	return siphash.Hash(0, 0, buf)
 }
