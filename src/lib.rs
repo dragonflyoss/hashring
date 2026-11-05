@@ -17,6 +17,7 @@
 use siphasher::sip::SipHasher24;
 use std::fmt;
 use std::hash::Hasher;
+use std::sync::Arc;
 
 /// The default number of virtual nodes of each node on the ring, shared by the
 /// seed peer selectors of dragonfly and dragonfly-sdk.
@@ -29,14 +30,15 @@ pub struct VNode {
     /// The replica index of this virtual node for its physical node.
     id: usize,
 
-    /// The physical node name this virtual node represents.
-    name: String,
+    /// The physical node name this virtual node represents, shared by all
+    /// virtual nodes of the physical node.
+    name: Arc<str>,
 }
 
 /// Implements the virtual node.
 impl VNode {
     /// Creates a new virtual node with the given replica id and physical name.
-    fn new(id: usize, name: String) -> Self {
+    fn new(id: usize, name: Arc<str>) -> Self {
         VNode { id, name }
     }
 
@@ -116,6 +118,7 @@ impl VNodeHashRing {
 
     /// Adds `vnodes_per_node` virtual nodes of the named node to the ring.
     pub fn add(&mut self, name: String) {
+        let name: Arc<str> = name.into();
         for id in 0..self.vnodes_per_node {
             let vnode = VNode::new(id, name.clone());
             self.nodes.push(Node {
@@ -196,7 +199,7 @@ mod tests {
 
     #[test]
     fn vnode_formats_as_name_and_id() {
-        let vnode = VNode::new(1, "default-seed-client-1".to_string());
+        let vnode = VNode::new(1, "default-seed-client-1".into());
         assert_eq!(vnode.name(), "default-seed-client-1");
         assert_eq!(vnode.to_string(), "default-seed-client-1|1");
     }
